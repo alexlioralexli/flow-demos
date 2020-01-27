@@ -33,7 +33,7 @@ def generate_1d_flow_data(n):
 
 
 def load_flow_demo_1(n_train, n_test, loader_args, visualize=True, train_only=False):
-    train_data, test_data = generate_1d_flow_data(n_train), generate_1d_data(n_test)
+    train_data, test_data = generate_1d_flow_data(n_train), generate_1d_flow_data(n_test)
 
     if visualize:
         from .visualize import plot_hist
