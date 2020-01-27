@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.utils.data as data
+from scipy.stats import norm
 from .utils import download_file_from_google_drive
 
 def generate_1d_data(n, d):
@@ -33,14 +34,16 @@ def generate_1d_flow_data(n):
 
 
 def load_flow_demo_1(n_train, n_test, loader_args, visualize=True, train_only=False):
+    # 1d distribution, mixture of two gaussians
     train_data, test_data = generate_1d_flow_data(n_train), generate_1d_flow_data(n_test)
 
     if visualize:
-        from .visualize import plot_hist
-
-        plot_hist(train_data, bins=50, title='Train Set')
-        if not train_only:
-            plot_hist(test_data, bins=d, title='Test Set')
+        x = np.linspace(-3, 3, num=100)
+        densities = 0.5 * norm.pdf(x, loc=-1, scale=0.25) + 0.5 * norm.pdf(x, loc=0.5, scale=0.5)
+        plt.figure()
+        plt.plot(x, densities)
+        plt.hist(train_data, bins=50)
+        # plot_hist(train_data, bins=50, title='Train Set')
 
     train_dset, test_dset = NumpyDataset(train_data), NumpyDataset(test_data)
     train_loader, test_loader = data.DataLoader(train_dset, **loader_args), data.DataLoader(test_dset, **loader_args)
