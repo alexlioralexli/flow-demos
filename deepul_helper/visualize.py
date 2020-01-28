@@ -61,3 +61,45 @@ def plot_1d_continuous_dist(density, xlabel='x', ylabel="Density", title=''):
     plt.ylabel(ylabel)
     plt.title(title)
     plt.show()
+
+def visualize_demo1_flow(train_loader, initial_flow, final_flow):
+    plt.figure(figsize=(10,5))
+    train_data = torch.cat(list(train_loader))
+
+    # before:
+    plt.subplot(231)
+    plt.hist(train_data, bins=50)
+    plt.title('True Distribution of x')
+
+    plt.subplot(232)
+    x = torch.tensor(np.linspace(-3, 3, 200))
+    z, _ = initial_flow.flow(x)
+    z = z.detach().numpy()
+    plt.plot(x, z)
+    plt.title('Flow x -> z')
+
+    plt.subplot(233)
+    z_data, _ = initial_flow.flow(train_data)
+    z_data = z_data.detach().numpy()
+    plt.hist(z_data, bins=50)
+    plt.title('Empirical Distribution of z')
+
+    # after:
+    plt.subplot(234)
+    plt.hist(train_data, bins=50)
+    plt.title('True Distribution of x')
+
+    plt.subplot(235)
+    x = torch.tensor(np.linspace(-3, 3, 200))
+    z, _ = final_flow.flow(x)
+    z = z.detach().numpy()
+    plt.plot(x, z)
+    plt.title('Flow x -> z')
+
+    plt.subplot(236)
+    z_data, _ = final_flow.flow(train_data)
+    z_data = z_data.detach().numpy()
+    plt.hist(z_data, bins=50)
+    plt.title('Empirical Distribution of z')
+
+    plt.tight_layout()

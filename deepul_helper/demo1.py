@@ -7,25 +7,18 @@ import torch.utils.data as data
 import torch.optim as optim
 from scipy.stats import norm
 import copy
+import deepul_helper.pytorch_util as ptu
 from torch.distributions.uniform import Uniform
 from torch.distributions.beta import Beta
 from torch.distributions.normal import Normal
 from deepul_helper.data import load_flow_demo_1, generate_1d_flow_data, NumpyDataset
 from deepul_helper.visualize import plot_hist, plot_train_curves
-
-
-SEED = 10
-np.random.seed(SEED)
-torch.manual_seed(SEED)
-
-n_train, n_test = 2000, 1000
-loader_args = dict(batch_size=128, shuffle=True)
-train_loader, test_loader = load_flow_demo_1(n_train, n_test, loader_args, visualize=True, train_only=False)
-
+from tqdm import trange
 
 def train(model, train_loader, optimizer):
     model.train()
     for x in train_loader:
+        x = x.to(ptu.device)
         loss = model.nll(x)
         optimizer.zero_grad()
         loss.backward()
@@ -36,10 +29,11 @@ def eval_loss(model, data_loader):
     total_loss = 0
     with torch.no_grad():
         for x in data_loader:
+            x = x.to(ptu.device)
             loss = model.nll(x)
             total_loss += loss * x.shape[0]
         avg_loss = total_loss / len(data_loader.dataset)
-    return avg_loss.item()
+    return avg_loss.item() # ptu.get_numpy()
 
 def train_epochs(model, train_loader, test_loader, train_args):
     epochs, lr = train_args['epochs'], train_args['lr']
@@ -48,7 +42,7 @@ def train_epochs(model, train_loader, test_loader, train_args):
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
     train_losses, test_losses = [], []
-    for epoch in range(epochs):
+    for epoch in trange(epochs):
         model.train()
         train(model, train_loader, optimizer)
         train_loss = eval_loss(model, train_loader)
@@ -70,10 +64,6 @@ def train_epochs(model, train_loader, test_loader, train_args):
         plot_train_curves(epochs, train_losses, test_losses, title='Training Curve')
     return train_losses, test_losses
 
-
-
-
-
 class MixtureCDFFlow(nn.Module):
     def __init__(self,
                  base_dist='uniform',
@@ -82,9 +72,9 @@ class MixtureCDFFlow(nn.Module):
         super().__init__()
         self.composition = False
         if base_dist == 'uniform':
-            self.base_dist = Uniform(0.0, 1.0)
+            self.base_dist = Uniform(ptu.tensor(0.0), ptu.tensor(1.0))
         elif base_dist == 'beta':
-            self.base_dist = Beta(5, 5)
+            self.base_dist = Beta(ptu.tensor(5.0), ptu.tensor(5))
         else:
             raise NotImplementedError
 
@@ -165,12 +155,20 @@ def visualize_demo1_flow(train_loader, initial_flow, final_flow):
 
     plt.tight_layout()
 
-cdf_flow_model = MixtureCDFFlow(base_dist='uniform', mixture_dist='gaussian', n_components=5)
-cdf_flow_model_old = copy.deepcopy(cdf_flow_model)
-train_epochs(cdf_flow_model, train_loader, test_loader, dict(epochs=50, lr=5e-3))
-visualize_demo1_flow(train_loader, cdf_flow_model_old, cdf_flow_model)
+if __name__ == '__main__':
+    SEED = 10
+    np.random.seed(SEED)
+    torch.manual_seed(SEED)
 
-beta_cdf_flow_model = MixtureCDFFlow(base_dist='beta', mixture_dist='gaussian', n_components=5)
-beta_cdf_flow_model_old = copy.deepcopy(beta_cdf_flow_model)
-train_epochs(beta_cdf_flow_model, train_loader, test_loader, dict(epochs=250, lr=1e-2))
-visualize_demo1_flow(train_loader, beta_cdf_flow_model_old, beta_cdf_flow_model)
+    n_train, n_test = 2000, 1000
+    loader_args = dict(batch_size=128, shuffle=True)
+    train_loader, test_loader = load_flow_demo_1(n_train, n_test, loader_args, visualize=True, train_only=False)
+    cdf_flow_model = MixtureCDFFlow(base_dist='uniform', mixture_dist='gaussian', n_components=5)
+    cdf_flow_model_old = copy.deepcopy(cdf_flow_model)
+    train_epochs(cdf_flow_model, train_loader, test_loader, dict(epochs=50, lr=5e-3))
+    visualize_demo1_flow(train_loader, cdf_flow_model_old, cdf_flow_model)
+
+    beta_cdf_flow_model = MixtureCDFFlow(base_dist='beta', mixture_dist='gaussian', n_components=5)
+    beta_cdf_flow_model_old = copy.deepcopy(beta_cdf_flow_model)
+    train_epochs(beta_cdf_flow_model, train_loader, test_loader, dict(epochs=250, lr=1e-2))
+    visualize_demo1_flow(train_loader, beta_cdf_flow_model_old, beta_cdf_flow_model)
