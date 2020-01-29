@@ -64,7 +64,7 @@ def plot_1d_continuous_dist(density, xlabel='x', ylabel="Density", title=''):
 
 def visualize_demo1_flow(train_loader, initial_flow, final_flow):
     plt.figure(figsize=(10,5))
-    train_data = torch.cat(list(train_loader))
+    train_data = train_loader.dataset
 
     # before:
     plt.subplot(231)

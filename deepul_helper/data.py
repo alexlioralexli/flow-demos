@@ -7,6 +7,7 @@ import torch
 import torch.utils.data as data
 from scipy.stats import norm
 from .utils import download_file_from_google_drive
+from sklearn.datasets import make_moons
 
 def generate_1d_data(n, d):
     rand = np.random.RandomState(0)
@@ -38,12 +39,16 @@ def load_flow_demo_1(n_train, n_test, loader_args, visualize=True, train_only=Fa
     train_data, test_data = generate_1d_flow_data(n_train), generate_1d_flow_data(n_test)
 
     if visualize:
+        plt.figure()
         x = np.linspace(-3, 3, num=100)
         densities = 0.5 * norm.pdf(x, loc=-1, scale=0.25) + 0.5 * norm.pdf(x, loc=0.5, scale=0.5)
         plt.figure()
         plt.plot(x, densities)
+        plt.show()
+        plt.figure()
         plt.hist(train_data, bins=50)
         # plot_hist(train_data, bins=50, title='Train Set')
+        plt.show()
 
     train_dset, test_dset = NumpyDataset(train_data), NumpyDataset(test_data)
     train_loader, test_loader = data.DataLoader(train_dset, **loader_args), data.DataLoader(test_dset, **loader_args)
@@ -86,6 +91,58 @@ def load_demo_2(n_train, n_test, d, loader_args, visualize=True):
     train_loader, test_loader = data.DataLoader(train_dset, **loader_args), data.DataLoader(test_dset, **loader_args)
 
     return train_loader, test_loader
+
+
+
+def load_smiley_face(n):
+    count = n
+    rand = np.random.RandomState(0)
+    a = [[-1.5, 2.5]] + rand.randn(count // 3, 2) * 0.2
+    b = [[1.5, 2.5]] + rand.randn(count // 3, 2) * 0.2
+    c = np.c_[2 * np.cos(np.linspace(0, np.pi, count // 3)),
+              -np.sin(np.linspace(0, np.pi, count // 3))]
+    c += rand.randn(*c.shape) * 0.2
+    data_x = np.concatenate([a, b, c], axis=0)
+    data_y = np.array([0] * len(a) + [1] * len(b) + [2] * len(c))
+    perm = rand.permutation(len(data_x))
+    return data_x[perm], data_y[perm]
+
+
+def load_cross(n):
+    pass
+
+def load_half_moons(n):
+    return make_moons(n_samples=n, noise=0.1)
+
+
+def make_scatterplot(points, filename=None):
+    plt.figure()
+    plt.scatter(points[:, 0], points[:, 1], s=1)
+    if filename is not None:
+        plt.savefig("q1_{}.png".format(filename))
+
+
+def load_flow_demo_3(n_train, n_test, loader_args, visualize=True, train_only=False, distribution='face'):
+    if distribution == 'face':
+        train_data, train_labels = load_smiley_face(n_train)
+        test_data, test_labels = load_smiley_face(n_test)
+    elif distribution == 'moons':
+        train_data, train_labels = load_half_moons(n_train)
+        test_data, test_labels = load_half_moons(n_test)
+    else:
+        raise NotImplementedError
+
+    if visualize:
+        plt.figure()
+        make_scatterplot(train_data)
+        plt.show()
+
+    train_dset, test_dset = NumpyDataset(train_data), NumpyDataset(test_data)
+    train_loader, test_loader = data.DataLoader(train_dset, **loader_args), data.DataLoader(test_dset, **loader_args)
+
+    if train_only:
+        return train_loader
+    return train_loader, test_loader, train_labels, test_labels
 
 
 class NumpyDataset(data.Dataset):
