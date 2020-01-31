@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-
+import torch
 from torchvision.utils import make_grid
 
 
@@ -19,9 +19,6 @@ def plot_hist(data, bins=10, xlabel='x', ylabel='Probability', title='', density
     plt.title(title)
     plt.show()
 
-
-
-
 def plot_2d_dist(dist, title='Learned Distribution'):
     plt.figure()
     plt.imshow(dist)
@@ -29,7 +26,6 @@ def plot_2d_dist(dist, title='Learned Distribution'):
     plt.xlabel('x1')
     plt.ylabel('x0')
     plt.show()
-
 
 def plot_train_curves(epochs, train_losses, test_losses, title=''):
     x = np.linspace(0, epochs, len(train_losses))
@@ -42,7 +38,6 @@ def plot_train_curves(epochs, train_losses, test_losses, title=''):
     plt.title(title)
     plt.legend()
     plt.show()
-
 
 def visualize_batch(batch_tensor, nrow=8, title='', figsize=None):
     grid_img = make_grid(batch_tensor, nrow=nrow)

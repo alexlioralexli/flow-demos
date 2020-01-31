@@ -57,41 +57,43 @@ def load_flow_demo_1(n_train, n_test, loader_args, visualize=True, train_only=Fa
         return train_loader
     return train_loader, test_loader
 
-
-
-def load_demo_2(n_train, n_test, d, loader_args, visualize=True):
-    from PIL import Image
-    from urllib.request import urlopen
-    import io
-
-    fd = urlopen('https://wilson1yan.github.io/images/smiley.jpg')
-    image_file = io.BytesIO(fd.read())
-    im = Image.open(image_file).resize((d, d)).convert('L')
-    im = np.array(im).astype('float32')
-    dist = im / im.sum()
+def load_flow_demo_2(n_train, n_test, loader_args, visualize=True, train_only=False, distribution='uniform'):
+    if distribution == 'uniform':
+        train_data = np.random.uniform(-2, 2, (n_train,))
+        test_data = np.random.uniform(-2, 2, (n_test,))
+        xs = np.linspace(-2, 2, 250)
+        ys = np.ones_like(xs) * 0.25
+    elif distribution == 'triangular':
+        train_data = np.random.triangular(-2, -1.5, 2, (n_train,))
+        test_data = np.random.triangular(-2, -1.5, 2, (n_test,))
+        xs = np.linspace(-2, 2, 250)
+        ys = np.zeros_like(xs)
+        ys[xs < -1.5] = 2.0 + xs[xs < -1.5]
+        ys[xs >= -1.5] = (2 - xs[xs >= -1.5]) / 7
+        plt.plot(xs, ys)
+    elif distribution == 'complex':
+        xs = np.linspace(0, 1, 100)
+        ys = np.tanh(np.sin(8 * np.pi * xs) + 3 * np.power(xs, 0.5))
+        train_data = np.random.choice(np.linspace(-2, 2, 100), size=n_train, p=ys / ys.sum())
+        test_data = np.random.choice(np.linspace(-2, 2, 100), size=n_test, p=ys / ys.sum())
+        xs = np.linspace(-2, 2, 100)
+        ys = ys / ys.sum() / 0.04
+    else:
+        raise NotImplementedError
 
     if visualize:
         plt.figure()
-        plt.title('True Distribution')
-        plt.imshow(dist)
-        plt.show()
-
-    dist = dist[::-1]
-    train_data, test_data = generate_2d_data(n_train, dist), generate_2d_data(n_test, dist)
-
-    if visualize:
-        fig, ax1 = plt.subplots(1, 1)
-        ax1.set_title('Train Set')
-        ax1.hist2d(train_data[:, 1], train_data[: ,0], bins=d)
-        ax1.set_xlabel('x1')
-        ax1.set_ylabel('x0')
+        plt.plot(xs, ys)
+        plt.hist(train_data, bins=50, density=True)
+        plt.title(distribution)
         plt.show()
 
     train_dset, test_dset = NumpyDataset(train_data), NumpyDataset(test_data)
     train_loader, test_loader = data.DataLoader(train_dset, **loader_args), data.DataLoader(test_dset, **loader_args)
 
+    if train_only:
+        return train_loader
     return train_loader, test_loader
-
 
 
 def load_smiley_face(n):
@@ -115,9 +117,11 @@ def load_half_moons(n):
     return make_moons(n_samples=n, noise=0.1)
 
 
-def make_scatterplot(points, filename=None):
+def make_scatterplot(points, title=None, filename=None):
     plt.figure()
     plt.scatter(points[:, 0], points[:, 1], s=1)
+    if title is not None:
+        plt.title(title)
     if filename is not None:
         plt.savefig("q1_{}.png".format(filename))
 
@@ -134,7 +138,8 @@ def load_flow_demo_3(n_train, n_test, loader_args, visualize=True, train_only=Fa
 
     if visualize:
         plt.figure()
-        make_scatterplot(train_data)
+        plt.scatter(train_data[:, 0], train_data[:, 1], s=1, c=train_labels)
+        plt.title(distribution)
         plt.show()
 
     train_dset, test_dset = NumpyDataset(train_data), NumpyDataset(test_data)
