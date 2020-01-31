@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from torchvision.utils import make_grid
+import deepul_helper.pytorch_util as ptu
 
 
 def plot_hist(data, bins=10, xlabel='x', ylabel='Probability', title='', density=None):
@@ -59,7 +60,7 @@ def plot_1d_continuous_dist(density, xlabel='x', ylabel="Density", title=''):
 
 def visualize_demo1_flow(train_loader, initial_flow, final_flow):
     plt.figure(figsize=(10,5))
-    train_data = train_loader.dataset.array
+    train_data = ptu.FloatTensor(train_loader.dataset.array)
 
     # before:
     plt.subplot(231)
