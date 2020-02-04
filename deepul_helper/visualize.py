@@ -99,3 +99,29 @@ def visualize_demo1_flow(train_loader, initial_flow, final_flow):
     plt.title('Empirical Distribution of z')
 
     plt.tight_layout()
+
+def plot_demo2_losses(losses):
+    # taken with modification from matplotlib.org/gallery/images_contours_and_fields/image_annotated_heatmap.html
+    n_layers = np.flip(np.arange(1, 1 + len(losses)), axis=0)
+    n_components = np.arange(1, 1 + losses.shape[1])
+
+    fig, ax = plt.subplots()
+    flipped_losses = np.flip(losses, axis=0)
+
+    im = ax.imshow(flipped_losses)
+
+    # We want to show all ticks...
+    ax.set_xticks(np.arange(len(n_components)))
+    ax.set_yticks(np.arange(len(n_layers)))
+    # ... and label them with the respective list entries
+    ax.set_xticklabels(n_components)
+    ax.set_yticklabels(n_layers)
+
+    # Loop over data dimensions and create text annotations.
+    for i in range(len(n_layers)):
+        for j in range(len(n_components)):
+            text = ax.text(j, i, "{:0.2f}".format(flipped_losses[i, j]), ha="center", va="center", color="w")
+    ax.set_xlabel("Number of components per layer")
+    ax.set_ylabel("Number of layers")
+    ax.set_title("Nats/dim using varying composition schemes")
+    fig.tight_layout()
